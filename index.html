@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Galeria de Imagens</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-100">
+
+  <!-- Cabeçalho -->
+  <header class="bg-blue-600 text-white p-4 text-center">
+    <h1 class="text-xl font-bold">Galeria de Imagens</h1>
+  </header>
+
+  <!-- Container principal -->
+  <div class="container mx-auto my-8">
+
+    <!-- Área de Upload -->
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold mb-4">Upload de Imagens</h2>
+      <input type="file" id="fileInput" class="block w-full p-3 border border-gray-300 rounded-lg mb-4"
+        accept="image/*">
+      <button id="uploadButton" class="bg-blue-500 text-white px-6 py-2 rounded-lg">Upload</button>
+    </div>
+
+    <!-- Galeria de Imagens -->
+    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
+      <!-- As imagens serão carregadas aqui -->
+    </div>
+
+  </div>
+
+  <script>
+    const apiUrl = 'http://localhost:3000/files';
+
+    // Função para listar as imagens
+    const listFiles = async () => {
+      try {
+        const response = await axios.get(apiUrl);
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = ''; // Limpar a galeria antes de adicionar as novas imagens
+
+        response.data.forEach(file => {
+          // Verificar se o arquivo tem uma extensão de imagem
+          if (/\.(png|jpg|jpeg|gif|bmp|webp)$/i.test(file.name)) {
+            const imgElement = document.createElement('img');
+            imgElement.src = file.download_url; // Substitua para o caminho correto da imagem
+            imgElement.alt = file.name;
+            imgElement.className = 'w-full h-48 object-cover rounded-lg shadow-lg';
+            gallery.appendChild(imgElement);
+          }
+          console.log(file);
+        });
+
+      } catch (error) {
+        console.error('Erro ao listar as imagens:', error);
+      }
+    };
+
+    // Função para fazer o upload da imagem
+    const uploadFile = async () => {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Por favor, selecione uma imagem.');
+        return;
+      }
+
+      // Verifica se o arquivo é uma imagem
+      const allowedExtensions = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedExtensions.includes(file.type)) {
+        alert('Por favor, envie uma imagem válida.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const uuid = crypto.randomUUID(); // UUID único para o caminho
+
+      try {
+        const response = await axios.post(`${apiUrl}?path=${uuid}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        alert('Imagem enviada com sucesso!');
+        listFiles(); // Atualiza a galeria após o upload
+      } catch (error) {
+        console.error('Erro ao fazer upload da imagem:', error);
+        alert('Erro ao fazer upload da imagem.');
+      }
+    };
+
+
+    // Adicionar o evento de upload ao botão
+    document.getElementById('uploadButton').addEventListener('click', uploadFile);
+
+    // Carregar as imagens ao iniciar
+    window.onload = () => {
+      listFiles();
+    };
+  </script>
+
+</body>
+
+</html>
